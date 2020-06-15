@@ -155,13 +155,13 @@ public class IndexFlowDelegate extends FlowDelegate {
 
                     @Override
                     public void onSuccess(File file) {
-                        boolean md5Equal = Md5Util.checkMd5(file, md5);
-                        if (!md5Equal) {
-                            if (onDownloadListener != null) {
-                                onDownloadListener.onFail(new Exception("文件md5不一致"));
-                            }
-                            return;
-                        }
+//                        boolean md5Equal = Md5Util.checkMd5(file, md5);
+//                        if (!md5Equal) {
+//                            if (onDownloadListener != null) {
+//                                onDownloadListener.onFail(new Exception("文件md5不一致"));
+//                            }
+//                            return;
+//                        }
                         if (onDownloadListener != null) {
                             onDownloadListener.onSuccess(file);
                         }

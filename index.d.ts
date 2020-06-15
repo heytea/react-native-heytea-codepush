@@ -23,9 +23,7 @@ export function syncHot(
     md5: string,
     versionCode: number,
     url: string,
-    progressCallback: (progress: number) => void,
-    successCallback: () => void,
-    errorCallback: (e: Error) => void
+    callback: (progress?: number, success?: boolean, error?: string) => void
 ): void;
 
 /**
@@ -35,9 +33,7 @@ export function syncAndroidApp(
     md5: string,
     versionCode: number,
     url: string,
-    progressCallback: (progress: number) => void,
-    successCallback: () => void,
-    errorCallback: (e: Error) => void
+    callback: (progress?: number, success?: boolean, error?: string) => void
 ): void;
 
 /**
