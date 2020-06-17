@@ -14,7 +14,7 @@
 
 #define ReloadBundle   @"ReloadBundle"
 #define HotUpdatePath  @"HotUpdateBundle"
-#define HotUpdateProgress @"HotUpdateProgress"
+#define HotUpdateProgress @"syncProgress"
 
 NSString *const AppId = @"";
 
@@ -78,13 +78,13 @@ RCT_EXPORT_METHOD(syncHot
     
     if([code isEqualToString:@"fail"]){
       // 下载失败
-      callback(@[@0,@"download fail"]);
+        callback(@[[NSNull null],@"1"]);
     }else{
      // 下载成功
       if (restartAfterUpdate) {
         [self postReloadNotification];
       }
-      callback(@[@1]);
+       callback(@[@"1",[NSNull null]]);
       
     }
   } withProgress:^(float progress) {
