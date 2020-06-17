@@ -20,7 +20,6 @@ typedef void(^ProgressBlock)(float progress);
 @property(nonatomic,copy) NSString *url;
 @property(nonatomic,copy) NSString *versionCode;
 @property(nonatomic,copy)NSString *md5;
-@property(nonatomic,assign)BOOL forceUpdate;
 
 
 +(instancetype)instance;

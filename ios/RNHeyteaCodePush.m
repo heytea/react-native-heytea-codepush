@@ -78,13 +78,13 @@ RCT_EXPORT_METHOD(syncHot
     
     if([code isEqualToString:@"fail"]){
       // 下载失败
-      callback(@[@"0",@"download fail"]);
+      callback(@[@0,@"download fail"]);
     }else{
      // 下载成功
       if (restartAfterUpdate) {
         [self postReloadNotification];
       }
-      callback(@[@"1"]);
+      callback(@[@1]);
       
     }
   } withProgress:^(float progress) {
@@ -131,14 +131,14 @@ RCT_EXPORT_METHOD(checkForHotUpdate:(int)versionCode
           NSError *err = [NSError errorWithDomain:@"" code:0 userInfo:nil];
           reject(@"0",@"version is same",err);
         }else{
-          resolve(@"1");
+          resolve(@1);
         }
     }else{
-      resolve(@"1");
+      resolve(@1);
     }
   }else{
     // 没有热更新过
-    resolve(@"1");
+    resolve(@1);
   }
   
 }
@@ -154,10 +154,10 @@ RCT_EXPORT_METHOD(checkForAppUpdate:(int)versionCode
   int buidCode = [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] intValue];
   if (versionCode > buidCode) {
     // app 版本更新
-    resolve(@"1");
+    resolve(@0);
   }else {
     // 热更新
-    resolve(@"0");
+    resolve(@0);
   }
 }
 
