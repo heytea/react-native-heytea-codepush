@@ -23,7 +23,7 @@ export function syncHot(
     md5: string,
     versionCode: number,
     url: string,
-    callback: (progress?: number, success?: boolean, error?: string) => void
+    callback: (code?: number, msg?: string) => void
 ): void;
 
 /**
