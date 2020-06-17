@@ -8,7 +8,6 @@
 
 #import "RNHeyteaCodePush.h"
 //#import <MBProgressHUD.h>
-#import <SSZipArchive.h>
 #import "RNHeyteaDownloader.h"
 #import <React/RCTConvert.h>
 
@@ -47,7 +46,7 @@ RCT_EXPORT_MODULE(ReactNativeHeyteaCodepush)
 }
 
 -(void)sendNotificationToJsWithProgress:(NSString *)progress{
-  [self sendEventWithName:HotUpdateProgress body: @{@"progress":progress}];
+  [self sendEventWithName:HotUpdateProgress body: progress];
 }
 
 RCT_EXPORT_METHOD(syncHot

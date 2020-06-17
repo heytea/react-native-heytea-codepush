@@ -7,7 +7,7 @@
 //
 
 #import "RNHeyteaDownloader.h"
-#import <SSZipArchive.h>
+#import "SSZipArchive.h"
 #import "MD5Manager.h"
 #import <React/RCTConvert.h>
 
