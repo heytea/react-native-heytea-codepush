@@ -7,6 +7,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 
 import com.facebook.react.bridge.ActivityEventListener;
@@ -15,6 +16,7 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.heyteago.codepush.delegate.FlowDelegate;
 
 import java.io.File;
@@ -85,15 +87,13 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
         mFlowDelegate.syncHot(md5, versionCode, url, new FlowDelegate.OnDownloadListener() {
             @Override
             public void onProgress(int progress) {
-                if (callback != null) {
-                    callback.invoke(progress, null, null);
-                }
+                sendEvent("syncProgress", progress);
             }
 
             @Override
             public void onSuccess(File file) {
                 if (callback != null) {
-                    callback.invoke(100, true, null);
+                    callback.invoke(true, null);
                 }
                 if (restartAfterUpdate) {
                     restartApp();
@@ -103,7 +103,7 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
             @Override
             public void onFail(Exception e) {
                 if (callback != null) {
-                    callback.invoke(null, false, e.getMessage());
+                    callback.invoke(false, e.getMessage());
                 }
             }
         });
@@ -117,15 +117,13 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
         mFlowDelegate.syncAndroidApp(md5, versionCode, url, new FlowDelegate.OnDownloadListener() {
             @Override
             public void onProgress(int progress) {
-                if (callback != null) {
-                    callback.invoke(progress, null, null);
-                }
+                sendEvent("syncProgress", progress);
             }
 
             @Override
             public void onSuccess(File file) {
                 if (callback != null) {
-                    callback.invoke(100, true, null);
+                    callback.invoke( true, null);
                 }
                 installApp(file);
             }
@@ -133,7 +131,7 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
             @Override
             public void onFail(Exception e) {
                 if (callback != null) {
-                    callback.invoke(null, false, e.getMessage());
+                    callback.invoke( false, e.getMessage());
                 }
             }
         });
@@ -172,5 +170,11 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
         } catch (Exception e) {
             Log.e("HeyteaCodePush", e.getMessage());
         }
+    }
+
+    private void sendEvent(String eventName, @Nullable Object params) {
+        reactContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, params);
     }
 }

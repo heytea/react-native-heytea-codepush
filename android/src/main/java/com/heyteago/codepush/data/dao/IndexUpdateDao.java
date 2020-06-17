@@ -10,11 +10,18 @@ import com.heyteago.codepush.data.entity.IndexUpdateEntity;
 
 @Dao
 public interface IndexUpdateDao {
-    @Query("SELECT * FROM `index_update` WHERE is_delete = :isDelete ORDER BY version_code DESC")
-    IndexUpdateEntity[] findByIsDelete(boolean isDelete);
 
-    @Query("SELECT * FROM `index_update`")
+    @Query("SELECT * FROM index_update WHERE is_fail = :isFail OR is_temp = :isTemp ORDER BY version_code DESC")
+    IndexUpdateEntity[] findByIsFailOrIsTemp(boolean isFail, boolean isTemp);
+
+    @Query("SELECT * FROM index_update WHERE is_temp = :isTemp ORDER BY version_code DESC")
+    IndexUpdateEntity[] findByIsTemp(boolean isTemp);
+
+    @Query("SELECT * FROM `index_update` ORDER BY version_code DESC")
     IndexUpdateEntity[] findAll();
+
+    @Query("SELECT * FROM index_update WHERE id = :id")
+    IndexUpdateEntity[] findById(long id);
 
     @Update
     void updateEntities(IndexUpdateEntity ...indexUpdateEntities);
@@ -24,4 +31,7 @@ public interface IndexUpdateDao {
 
     @Insert
     void insertEntities(IndexUpdateEntity... indexUpdateEntities);
+
+    @Query("DELETE FROM `index_update` WHERE version_code = :versionCode")
+    void deleteByVersionCode(int versionCode);
 }

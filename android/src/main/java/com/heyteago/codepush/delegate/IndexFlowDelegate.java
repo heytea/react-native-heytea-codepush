@@ -1,17 +1,13 @@
 package com.heyteago.codepush.delegate;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-
 import com.heyteago.codepush.data.HtCodePushDb;
 import com.heyteago.codepush.data.dao.IndexUpdateDao;
-import com.heyteago.codepush.data.dao.IndexVersionDao;
+import com.heyteago.codepush.data.dao.TempDao;
 import com.heyteago.codepush.data.entity.IndexUpdateEntity;
-import com.heyteago.codepush.data.entity.IndexVersionEntity;
+import com.heyteago.codepush.data.entity.TempEntity;
 import com.heyteago.codepush.util.DownloadUtil;
 import com.heyteago.codepush.util.FileHelper;
-import com.heyteago.codepush.util.Md5Util;
 import com.heyteago.codepush.util.Utils;
 
 import java.io.File;
@@ -20,36 +16,45 @@ import java.util.Date;
 
 public class IndexFlowDelegate extends FlowDelegate {
     private static final String BASE_STORAGE = "/data/data/";
-    private static final String BUNDLE_NAME = "index.android.bundle";
     private Context mContext;
     private IndexUpdateDao mIndexUpdateDao;
-    private IndexVersionDao mIndexVersionDao;
+    private TempDao mTempDao;
 
     public IndexFlowDelegate(Context context) {
         this.mContext = context;
         mIndexUpdateDao = HtCodePushDb.getDb(context).indexUpdateDao();
-        mIndexVersionDao = HtCodePushDb.getDb(context).indexVersionDao();
+        mTempDao = HtCodePushDb.getDb(context).tempDao();
     }
 
     /**
-     * TODO: 加载bundle成功后，调用该函数，用于判断热更新的成功、失败，以判断是否回滚操作
+     * 加载bundle成功后，调用该函数，用于判断热更新的成功、失败，以判断是否回滚操作
      */
     @Override
     public void loadBundleSuccess() {
-
+       long tempUpdateId = getTempUpdateId();
+        if (tempUpdateId > 0) {
+            IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findById(tempUpdateId);
+            for (IndexUpdateEntity updateEntity : updateEntities) {
+                updateEntity.setFail(false);
+                updateEntity.setTemp(false);
+            }
+            mIndexUpdateDao.updateEntities(updateEntities);
+        }
     }
 
     @Override
     public String getJsBundleFile() {
         // 查询更新表bundle版本，不包括逻辑删除
-        IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByIsDelete(false);
-        if (updateEntities.length > 0 && FileHelper.isExists(updateEntities[0].getBundleFile()) && Md5Util.checkMd5(new File(updateEntities[0].getBundleFile()), updateEntities[0].getMd5())) {
+        IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByIsFailOrIsTemp(false, true);
+        if (updateEntities.length > 0 && FileHelper.isExists(updateEntities[0].getBundleFile())) {
+            // 复位temp标志位
+            for (IndexUpdateEntity updateEntity : updateEntities) {
+                updateEntity.setTemp(false);
+            }
+            mIndexUpdateDao.updateEntities(updateEntities);
+            // 用于记录该次的id，当js调用loadSuccess的时候可以找到它
+            setTempUpdateId(updateEntities[0].getId());
             return updateEntities[0].getBundleFile();
-        }
-        // 查询版本表bundle版本
-        IndexVersionEntity[] versionEntities = mIndexVersionDao.findByEnable(true);
-        if (versionEntities.length > 0 && FileHelper.isExists(versionEntities[0].getBundleFile()) && Md5Util.checkMd5(new File(versionEntities[0].getBundleFile()), versionEntities[0].getMd5())) {
-            return versionEntities[0].getBundleFile();
         }
         return null;
     }
@@ -57,19 +62,12 @@ public class IndexFlowDelegate extends FlowDelegate {
     @Override
     public boolean checkForHotUpdate(int versionCode) throws Throwable {
         try {
-            IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByIsDelete(false);
+            IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findAll();
             if (updateEntities.length > 0) {
                 if (!FileHelper.isExists(updateEntities[0].getBundleFile())) {
                     return true;
                 }
                 return versionCode > updateEntities[0].getVersionCode();
-            }
-            IndexVersionEntity[] versionEntities = mIndexVersionDao.findByEnable(true);
-            if (versionEntities.length > 0) {
-                if (!FileHelper.isExists(versionEntities[0].getBundleFile())) {
-                    return true;
-                }
-                return versionCode > versionEntities[0].getVersionCode();
             }
             return true;
         } catch (Exception e) {
@@ -92,8 +90,8 @@ public class IndexFlowDelegate extends FlowDelegate {
             boolean shouldUpdate = checkForHotUpdate(versionCode);
             if (shouldUpdate) {
                 DownloadUtil downloadUtil = new DownloadUtil();
-                String destFileDir = BASE_STORAGE + mContext.getPackageName() + "bundle/index/" + versionCode;
-                downloadUtil.download(url, destFileDir, BUNDLE_NAME, new DownloadUtil.OnDownloadListener() {
+                String destFileDir = BASE_STORAGE + mContext.getPackageName() + "/bundles/" + versionCode;
+                downloadUtil.download(url, destFileDir, null, new DownloadUtil.OnDownloadListener() {
                     @Override
                     public void onProgress(int progress) {
                         if (onDownloadListener != null) {
@@ -105,7 +103,8 @@ public class IndexFlowDelegate extends FlowDelegate {
                     public void onSuccess(File file) {
                         // 下载成功
                         // 1. 检查md5
-                        // 2. 更新【更新表】
+                        // 2. 解压
+                        // 3. 更新【更新表】
                         // boolean md5Equal = Md5Util.checkMd5(file, md5);
                         // if (!md5Equal) {
                         //     if (onDownloadListener != null) {
@@ -113,7 +112,9 @@ public class IndexFlowDelegate extends FlowDelegate {
                         //     }
                         //     return;
                         // }
-                        saveUpdateTable(file, versionCode, md5);
+                        FileHelper.unzip(file.getPath(), file.getParent());
+                        String bundlePath = file.getParent() + "/bundle-android/index/index.android.bundle";
+                        saveUpdateTable(url, bundlePath, versionCode, md5);
                         if (onDownloadListener != null) {
                             onDownloadListener.onSuccess(file);
                         }
@@ -190,12 +191,39 @@ public class IndexFlowDelegate extends FlowDelegate {
     /**
      * 更新【更新表】
      */
-    private void saveUpdateTable(File file, int versionCode, String md5) {
+    private void saveUpdateTable(String downloadUrl, String bundlePath, int versionCode, String md5) {
+        mIndexUpdateDao.deleteByVersionCode(versionCode);
         IndexUpdateEntity updateEntity = new IndexUpdateEntity();
-        updateEntity.setBundleFile(file.getPath());
+        updateEntity.setBundleFile(bundlePath);
         updateEntity.setVersionCode(versionCode);
         updateEntity.setMd5(md5);
-        updateEntity.setCreateAt(SimpleDateFormat.getTimeInstance().format(new Date()));
+        updateEntity.setCreateAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        updateEntity.setDownloadUrl(downloadUrl);
+        updateEntity.setFail(true); // 添加到表的时候，默认为失败，当js端调用loadSuccess后，再将fail置为false，temp置为false
+        updateEntity.setTemp(true); // 临时标志位temp，加载后就置为false
         mIndexUpdateDao.insertEntities(updateEntity);
+    }
+
+    private void setTempUpdateId(long updateId) {
+        String key = "TempUpdateId";
+        TempEntity[] tempEntities = mTempDao.findByKey(key);
+        if (tempEntities.length > 0) {
+            tempEntities[0].setUpdateId(updateId);
+            mTempDao.updateTempEntities(tempEntities[0]);
+            return;
+        }
+        TempEntity saveTemp = new TempEntity();
+        saveTemp.setKey(key);
+        saveTemp.setUpdateId(updateId);
+        mTempDao.insertTempEntities(saveTemp);
+    }
+
+    private long getTempUpdateId() {
+        String key = "TempUpdateId";
+        TempEntity[] tempEntities = mTempDao.findByKey(key);
+        if (tempEntities.length > 0) {
+            return tempEntities[0].getUpdateId();
+        }
+        return -1;
     }
 }

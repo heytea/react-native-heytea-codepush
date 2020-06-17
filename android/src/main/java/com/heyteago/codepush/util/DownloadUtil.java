@@ -2,8 +2,6 @@ package com.heyteago.codepush.util;
 
 import android.content.Context;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.Nullable;
 
@@ -23,19 +21,6 @@ import okhttp3.Response;
 public class DownloadUtil {
     private OkHttpClient mOkHttpClient;
     private Set<Call> callSet = new HashSet<>();
-    private Handler mHandler = new Handler(Looper.getMainLooper());
-
-    private static boolean isAndroidMainThread() {
-        return Looper.myLooper() == Looper.getMainLooper();
-    }
-
-    private void runOnUiThread(Runnable runnable) {
-        if (isAndroidMainThread()) {
-            runnable.run();
-        } else {
-            mHandler.post(runnable);
-        }
-    }
 
     public DownloadUtil() {
         mOkHttpClient = new OkHttpClient();
@@ -72,18 +57,20 @@ public class DownloadUtil {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
+
+        //储存下载文件的目录
+        final File dir = new File(destFileDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
         final String finalFileName = fileName;
+
         Call call = mOkHttpClient.newCall(request);
         callSet.add(call);
         call.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, final IOException e) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        onDownloadListener.onFail(e);
-                    }
-                });
+                onDownloadListener.onFail(e);
             }
 
             @Override
@@ -93,21 +80,13 @@ public class DownloadUtil {
                 int len = 0;
                 FileOutputStream fos = null;
 
-                //储存下载文件的目录
-                File dir = new File(destFileDir);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                File file = new File(dir, finalFileName);
                 if (response.body() == null) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            onDownloadListener.onFail(new Exception("response.body() is null"));
-                        }
-                    });
+                    onDownloadListener.onFail(new Exception("response.body() is null"));
                     return;
                 }
+
+                File file = new File(dir, finalFileName);
+
                 try {
                     is = response.body().byteStream();
                     long total = response.body().contentLength();
@@ -120,31 +99,15 @@ public class DownloadUtil {
                         final int progress = (int) (sum * 1.0f / total * 100);
                         if (lastProgress != progress) {
                             lastProgress = progress;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    //下载中更新进度条
-                                    onDownloadListener.onProgress(progress);
-                                }
-                            });
+                            //下载中更新进度条
+                            onDownloadListener.onProgress(progress);
                         }
                     }
                     fos.flush();
                     final File finalFile = file;
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            //下载完成
-                            onDownloadListener.onSuccess(finalFile);
-                        }
-                    });
+                    onDownloadListener.onSuccess(finalFile);
                 } catch (final Exception e) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            onDownloadListener.onFail(e);
-                        }
-                    });
+                    onDownloadListener.onFail(e);
                 } finally {
                     try {
                         if (is != null) {

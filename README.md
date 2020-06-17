@@ -46,7 +46,7 @@ ReactNativeHeyteaCodePush.syncHot(
     md5: string,
     versionCode: number,
     url: string,
-    callback: (progress?: number, success?: boolean, error?: string) => void
+    callback: (success?: boolean, error?: string) => void
 ): void;
 
 /**
@@ -56,7 +56,7 @@ ReactNativeHeyteaCodePush.syncAndroidApp(
     md5: string,
     versionCode: number,
     url: string,
-    callback: (progress?: number, success?: boolean, error?: string) => void
+    callback: (success?: boolean, error?: string) => void
 ): void;
 
 /**
@@ -64,6 +64,20 @@ ReactNativeHeyteaCodePush.syncAndroidApp(
  * @param {string} url App Store应用链接
  */
 ReactNativeHeyteaCodePush.synciOSApp(url: string): void;
+
+/**
+ * 监听下载进度
+ */
+componentDidMount() {
+  this.progressEmitter = eventEmitter.addListener('syncProgress', (progress: number) => {
+
+  })
+}
+
+componentWillMount() {
+  this.progressEmitter && this.progressEmitter.remove()
+}
+
 ```
 
 ### Android

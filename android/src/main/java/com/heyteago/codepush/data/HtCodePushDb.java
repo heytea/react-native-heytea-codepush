@@ -7,11 +7,11 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 import com.heyteago.codepush.data.dao.IndexUpdateDao;
-import com.heyteago.codepush.data.dao.IndexVersionDao;
+import com.heyteago.codepush.data.dao.TempDao;
 import com.heyteago.codepush.data.entity.IndexUpdateEntity;
-import com.heyteago.codepush.data.entity.IndexVersionEntity;
+import com.heyteago.codepush.data.entity.TempEntity;
 
-@Database(entities = {IndexVersionEntity.class, IndexUpdateEntity.class}, version = 1, exportSchema = false)
+@Database(entities = {IndexUpdateEntity.class, TempEntity.class}, version = 2, exportSchema = false)
 public abstract class HtCodePushDb extends RoomDatabase {
     private static HtCodePushDb instance;
 
@@ -33,7 +33,7 @@ public abstract class HtCodePushDb extends RoomDatabase {
         return instance;
     }
 
-    public abstract IndexVersionDao indexVersionDao();
-
     public abstract IndexUpdateDao indexUpdateDao();
+
+    public abstract TempDao tempDao();
 }

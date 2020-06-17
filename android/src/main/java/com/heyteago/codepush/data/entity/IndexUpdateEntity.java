@@ -17,8 +17,12 @@ public class IndexUpdateEntity {
     private String createAt;
     @ColumnInfo(name = "is_delete")
     private boolean isDelete = false; // 逻辑删除
-    @ColumnInfo(name = "update_fail")
-    private boolean updateFail = false; // 更新失败
+    @ColumnInfo(name = "is_fail")
+    private boolean isFail = false; // 更新失败
+    @ColumnInfo(name = "is_temp")
+    private boolean isTemp; // 是否临时，
+    @ColumnInfo(name = "download_url")
+    private String downloadUrl; // bundle下载链接
 
     public long getId() {
         return id;
@@ -68,13 +72,30 @@ public class IndexUpdateEntity {
         isDelete = delete;
     }
 
-    public boolean isUpdateFail() {
-        return updateFail;
+    public boolean isFail() {
+        return isFail;
     }
 
-    public void setUpdateFail(boolean updateFail) {
-        this.updateFail = updateFail;
+    public void setFail(boolean fail) {
+        isFail = fail;
     }
+
+    public boolean isTemp() {
+        return isTemp;
+    }
+
+    public void setTemp(boolean temp) {
+        isTemp = temp;
+    }
+
+    public String getDownloadUrl() {
+        return downloadUrl;
+    }
+
+    public void setDownloadUrl(String downloadUrl) {
+        this.downloadUrl = downloadUrl;
+    }
+
 
     @Override
     public String toString() {
@@ -85,7 +106,9 @@ public class IndexUpdateEntity {
                 ", versionCode=" + versionCode +
                 ", createAt='" + createAt + '\'' +
                 ", isDelete=" + isDelete +
-                ", updateFail=" + updateFail +
+                ", isFail=" + isFail +
+                ", isTemp=" + isTemp +
+                ", downloadUrl='" + downloadUrl + '\'' +
                 '}';
     }
 }
