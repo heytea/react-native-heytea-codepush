@@ -1,7 +1,7 @@
 # @heytea/react-native-heytea-codepush
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
-[![npm](https://img.shields.io/badge/npm-1.0.0-green)](https://www.npmjs.com/package/@heytea/react-native-heytea-codepush)
+[![npm](https://img.shields.io/badge/npm-1.0.1-green)](https://www.npmjs.com/package/@heytea/react-native-heytea-codepush)
 
 
 
@@ -46,9 +46,7 @@ ReactNativeHeyteaCodePush.syncHot(
     md5: string,
     versionCode: number,
     url: string,
-    progressCallback: (progress: number) => void,
-    successCallback: () => void,
-    errorCallback: (e: Error) => void
+    callback: (progress?: number, success?: boolean, error?: string) => void
 ): void;
 
 /**
@@ -58,9 +56,7 @@ ReactNativeHeyteaCodePush.syncAndroidApp(
     md5: string,
     versionCode: number,
     url: string,
-    progressCallback: (progress: number) => void,
-    successCallback: () => void,
-    errorCallback: (e: Error) => void
+    callback: (progress?: number, success?: boolean, error?: string) => void
 ): void;
 
 /**
