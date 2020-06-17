@@ -154,7 +154,7 @@ RCT_EXPORT_METHOD(checkForAppUpdate:(int)versionCode
   int buidCode = [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] intValue];
   if (versionCode > buidCode) {
     // app 版本更新
-    resolve(@0);
+    resolve(@1);
   }else {
     // 热更新
     resolve(@0);
