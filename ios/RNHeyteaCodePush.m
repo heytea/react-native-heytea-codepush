@@ -14,6 +14,7 @@
 #define ReloadBundle   @"ReloadBundle"
 #define HotUpdatePath  @"HotUpdateBundle"
 #define HotUpdateProgress @"syncProgress"
+#define DevBundlePath @"DevRNBundle"
 
 NSString *const AppId = @"";
 
@@ -190,6 +191,51 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
   NSString *docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
   NSString *bundlePath = [docPath stringByAppendingPathComponent:HotUpdatePath];
   return bundlePath;
+}
+
++(NSURL *)bundleURL{
+    BOOL isDir = NO;
+    NSURL *finalUrl;
+    NSFileManager *fm = [NSFileManager defaultManager];
+    
+    // 存储热更版本和路径的plist
+    NSString *plistPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"bundle.plist"];
+    
+    // 热更新包存储路径
+    NSString *hotBundle = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:HotUpdatePath] stringByAppendingPathComponent:@"bundles"];
+    
+    if ([fm fileExistsAtPath:plistPath isDirectory:&isDir]) {
+      NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
+      if (arr.count > 0) {
+        // 有热更包
+        NSDictionary *currentDic = [arr lastObject];
+        NSString *path = currentDic[@"path"];
+        NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",path];
+        finalUrl = [NSURL URLWithString:finalStr];
+      }else{
+          // 存在plist文件但无内容 这种情况一般不存在
+        #ifdef DEBUG
+          //bundle文件加载
+          NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
+          NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
+          finalUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
+        #else
+          finalUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+        #endif
+
+      }
+    }else{
+        #ifdef DEBUG
+        //bundle文件加载
+        NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
+        NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
+        finalUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
+        #else
+        finalUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+        #endif
+    }
+    
+    return finalUrl;
 }
 
 

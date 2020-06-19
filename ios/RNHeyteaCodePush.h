@@ -14,7 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface RNHeyteaCodePush : RCTEventEmitter
-
++(NSURL *)bundleURL;
 
 @end
 
