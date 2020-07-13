@@ -182,6 +182,20 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
   return bundlePath;
 }
 
+
++(NSURL *)getLastBundleURL{
+    NSURL *tempUrl;
+    #ifdef DEBUG
+    //bundle文件加载
+    NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
+    NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
+    tempUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
+    #else
+    tempUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+    #endif
+    return tempUrl;
+}
+
 +(NSURL *)bundleURL{
     
     // 首次下载完成 无法校验 只有加载成功才能知道bundle可用 status会置为1
@@ -216,37 +230,16 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
             NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",path];
             finalUrl = [NSURL URLWithString:finalStr];
         }else{
-            #ifdef DEBUG
-            //bundle文件加载
-            NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
-            NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
-            finalUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
-            #else
-            finalUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
-            #endif
+            finalUrl = [self getLastBundleURL];
         }
        
       }else{
         // 存在plist文件但无内容 这种情况一般不存在
-        #ifdef DEBUG
-          //bundle文件加载
-          NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
-          NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
-          finalUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
-        #else
-          finalUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
-        #endif
-
+          finalUrl = [self getLastBundleURL];
       }
     }else{
-        #ifdef DEBUG
-        //bundle文件加载
-        NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
-        NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
-        finalUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
-        #else
-        finalUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
-        #endif
+        // 不存在bundlePlist
+        finalUrl = [self getLastBundleURL];
     }
     
     return finalUrl;
