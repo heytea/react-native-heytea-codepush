@@ -204,7 +204,6 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
     }
     
     BOOL isDir = NO;
-    NSURL *finalUrl;
     NSFileManager *fm = [NSFileManager defaultManager];
     
     // 存储热更版本和路径的plist
@@ -228,21 +227,12 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
             NSDictionary *currentDic = [tempArr lastObject];
             NSString *path = currentDic[@"path"];
             NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",path];
-            finalUrl = [NSURL URLWithString:finalStr];
-        }else{
-            finalUrl = [self getLastBundleURL];
+            return [NSURL URLWithString:finalStr];
         }
-       
-      }else{
-        // 存在plist文件但无内容 这种情况一般不存在
-          finalUrl = [self getLastBundleURL];
       }
-    }else{
-        // 不存在bundlePlist
-        finalUrl = [self getLastBundleURL];
     }
     
-    return finalUrl;
+    return [self getLastBundleURL];
 }
 
 
