@@ -7,7 +7,6 @@
 //
 
 #import "RNHeyteaCodePush.h"
-//#import <MBProgressHUD.h>
 #import "RNHeyteaDownloader.h"
 #import <React/RCTConvert.h>
 
@@ -16,18 +15,9 @@
 #define HotUpdateProgress @"syncProgress"
 #define DevBundlePath @"DevRNBundle"
 
-NSString *const AppId = @"";
-
-
-@protocol RNCodePushDelegate <NSObject>
--(void)reloadBundle;
-@end
+static NSURL *currentURL = nil;
 
 @interface RNHeyteaCodePush() <RCTBridgeModule>
-
-//@property(nonatomic,strong)MBProgressHUD *hud;
-@property(nonatomic,assign)float progressValue;
-@property(nonatomic,weak) id <RNCodePushDelegate> codepushDelegate;
 
 @end
 
@@ -37,9 +27,9 @@ NSString *const AppId = @"";
 RCT_EXPORT_MODULE(ReactNativeHeyteaCodepush)
 
 
-//-(dispatch_queue_t)methodQueue{
-//  return dispatch_get_main_queue();
-//}
+-(dispatch_queue_t)methodQueue{
+  return dispatch_get_main_queue();
+}
 
 - (NSArray<NSString *> *)supportedEvents
 {
@@ -58,13 +48,6 @@ RCT_EXPORT_METHOD(syncHot
                   :(RCTResponseSenderBlock)callback
                   ){
   
-  // 下载bundle
-//  UIViewController *currentVc = [self getCurrentViewController];
-//  MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:currentVc.view animated:YES];
-//  hud.mode = MBProgressHUDModeAnnularDeterminate;
-//  hud.label.text = @"下载中...";
-//  self.hud = hud;
-  
   NSString *versionStr = [NSString stringWithFormat:@"%d",versionCode];
   NSDictionary *data = @{
     @"md5":md5,
@@ -78,13 +61,19 @@ RCT_EXPORT_METHOD(syncHot
     
     if([code isEqualToString:@"fail"]){
       // 下载失败
-        callback(@[[NSNull null],@"1"]);
+      currentURL = nil;
+      callback(@[[NSNull null],@"1"]);
+        
     }else{
      // 下载成功
+      NSString *hotBundle = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:HotUpdatePath] stringByAppendingPathComponent:@"bundles"];
+      NSString *bundleStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",versionStr];
+      currentURL = [NSURL URLWithString:bundleStr];
+        
       if (restartAfterUpdate) {
         [self postReloadNotification];
       }
-       callback(@[@"1",[NSNull null]]);
+      callback(@[@"1",[NSNull null]]);
       
     }
   } withProgress:^(float progress) {
@@ -194,6 +183,12 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
 }
 
 +(NSURL *)bundleURL{
+    
+    // 首次下载完成 无法校验 只有加载成功才能知道bundle可用 status会置为1
+    if (currentURL) {
+        return currentURL;
+    }
+    
     BOOL isDir = NO;
     NSURL *finalUrl;
     NSFileManager *fm = [NSFileManager defaultManager];
@@ -208,12 +203,31 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
       NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
       if (arr.count > 0) {
         // 有热更包
-        NSDictionary *currentDic = [arr lastObject];
-        NSString *path = currentDic[@"path"];
-        NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",path];
-        finalUrl = [NSURL URLWithString:finalStr];
+        // 过滤status == 0的
+        NSMutableArray *tempArr = [NSMutableArray array];
+        for (NSDictionary *dic in arr) {
+            if ([dic[@"status"] isEqualToString:@"1"]) {
+                [tempArr addObject:dic];
+            }
+        }
+        if (tempArr.count > 0) {
+            NSDictionary *currentDic = [tempArr lastObject];
+            NSString *path = currentDic[@"path"];
+            NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",path];
+            finalUrl = [NSURL URLWithString:finalStr];
+        }else{
+            #ifdef DEBUG
+            //bundle文件加载
+            NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
+            NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
+            finalUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
+            #else
+            finalUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+            #endif
+        }
+       
       }else{
-          // 存在plist文件但无内容 这种情况一般不存在
+        // 存在plist文件但无内容 这种情况一般不存在
         #ifdef DEBUG
           //bundle文件加载
           NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
