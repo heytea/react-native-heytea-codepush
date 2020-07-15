@@ -67,7 +67,7 @@ didFinishDownloadingToURL:(NSURL *)location{
    NSString *curBundlePath = [hotBundlesPath stringByAppendingPathComponent:self.versionCode];
    [SSZipArchive unzipFileAtPath:location.path toDestination:curBundlePath];
   
-  NSString *bundlePath = [curBundlePath stringByAppendingPathComponent:@"/bundle-ios/index/main.bundle"];
+  NSString *bundlePath = [curBundlePath stringByAppendingPathComponent:@"/bundle-ios/index/main.jsbundle"];
   NSString *contentStr = [NSString stringWithContentsOfFile:bundlePath encoding:NSUTF8StringEncoding error:nil];
   NSString *md5Str = [MD5Manager md5:contentStr];
   

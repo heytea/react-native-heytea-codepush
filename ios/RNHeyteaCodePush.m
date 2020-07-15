@@ -62,18 +62,18 @@ RCT_EXPORT_METHOD(syncHot
     if([code isEqualToString:@"fail"]){
       // 下载失败
       currentURL = nil;
-      callback(@[[NSNull null],@"1"]);
+      callback(@[[NSNull null],@(YES)]);
         
     }else{
      // 下载成功
       NSString *hotBundle = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:HotUpdatePath] stringByAppendingPathComponent:@"bundles"];
-      NSString *bundleStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",versionStr];
+      NSString *bundleStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",versionStr];
       currentURL = [NSURL URLWithString:bundleStr];
         
       if (restartAfterUpdate) {
         [self postReloadNotification];
       }
-      callback(@[@"1",[NSNull null]]);
+      callback(@[@(YES),[NSNull null]]);
       
     }
   } withProgress:^(float progress) {
@@ -118,12 +118,12 @@ RCT_EXPORT_METHOD(checkForHotUpdate:(int)versionCode
         if ([currentVersion intValue] == versionCode) {
           // 版本号相同 无需热更新
           NSError *err = [NSError errorWithDomain:@"" code:0 userInfo:nil];
-          reject(@"0",@"version is same",err);
+          reject(@(NO),@"version is same",err);
         }else{
-          resolve(@1);
+          resolve(@(YES));
         }
     }else{
-      resolve(@1);
+      resolve(@(YES));
     }
   }else{
     // 没有热更新过
@@ -143,10 +143,10 @@ RCT_EXPORT_METHOD(checkForAppUpdate:(int)versionCode
   int buidCode = [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] intValue];
   if (versionCode > buidCode) {
     // app 版本更新
-    resolve(@1);
+    resolve(@(YES));
   }else {
     // 热更新
-    resolve(@0);
+    resolve(@(NO));
   }
 }
 
@@ -189,7 +189,7 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
     //bundle文件加载
     NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
     NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
-    tempUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.bundle"]];
+    tempUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.jsbundle"]];
     #else
     tempUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
     #endif
@@ -226,7 +226,7 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
         if (tempArr.count > 0) {
             NSDictionary *currentDic = [tempArr lastObject];
             NSString *path = currentDic[@"path"];
-            NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.bundle",path];
+            NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",path];
             return [NSURL URLWithString:finalStr];
         }
       }
