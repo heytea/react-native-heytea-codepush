@@ -115,19 +115,17 @@ RCT_EXPORT_METHOD(checkForHotUpdate:(int)versionCode
     NSMutableArray *bundleArr = [NSMutableArray arrayWithContentsOfFile:bundlePlistPath];
     if(bundleArr.count > 0){
       NSString *currentVersion = [bundleArr lastObject][@"version"];
-        if ([currentVersion intValue] == versionCode) {
-          // 版本号相同 无需热更新
-          NSError *err = [NSError errorWithDomain:@"" code:0 userInfo:nil];
-          reject(@(NO),@"version is same",err);
-        }else{
+        if ([currentVersion intValue] < versionCode) {
           resolve(@(YES));
+        }else{
+          resolve(@(NO));
         }
     }else{
       resolve(@(YES));
     }
   }else{
     // 没有热更新过
-    resolve(@1);
+    resolve(@(YES));
   }
   
 }
@@ -227,7 +225,9 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
             NSDictionary *currentDic = [tempArr lastObject];
             NSString *path = currentDic[@"path"];
             NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",path];
-            return [NSURL URLWithString:finalStr];
+            if ([fm fileExistsAtPath:finalStr]) {
+                return [NSURL URLWithString:finalStr];
+            }
         }
       }
     }
