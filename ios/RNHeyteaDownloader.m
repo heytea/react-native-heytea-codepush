@@ -71,7 +71,7 @@ didFinishDownloadingToURL:(NSURL *)location{
   NSString *contentStr = [NSString stringWithContentsOfFile:bundlePath encoding:NSUTF8StringEncoding error:nil];
   NSString *md5Str = [MD5Manager md5:contentStr];
   
-  if([md5Str isEqualToString:self.md5]) {
+  if(![md5Str isEqualToString:self.md5]) {
     // 更新plist文件
     [self updateVersionPlist];
     self.resBlock(@"success");
@@ -86,16 +86,18 @@ didFinishDownloadingToURL:(NSURL *)location{
  // 把版本号 和bundle 路径保存到plist文件
 -(void)updateVersionPlist{
   BOOL isDir = NO;
+  NSString *appVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+  NSString *appBuild = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
   NSString *plistPath = [self getBundlePlistPath];
   NSFileManager *fm = [NSFileManager defaultManager];
   NSMutableArray *plistArr = [NSMutableArray array];
   if ([fm fileExistsAtPath:plistPath isDirectory:&isDir]) {
     plistArr = [NSMutableArray arrayWithContentsOfFile:plistPath];
-    NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0"};
+      NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild };
     [plistArr addObject:dic];
     [plistArr writeToFile:plistPath atomically:YES];
   }else{
-    NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0"};
+    NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild };
     [plistArr addObject:dic];
     [plistArr writeToFile:plistPath atomically:YES];
   }

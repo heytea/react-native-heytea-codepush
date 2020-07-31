@@ -66,15 +66,10 @@ RCT_EXPORT_METHOD(syncHot
         
     }else{
      // 下载成功
-//      NSString *hotBundle = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:HotUpdatePath] stringByAppendingPathComponent:@"bundles"];
-//      NSString *bundleStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",versionStr];
-//      currentURL = [NSURL URLWithString:bundleStr];
-        
       if (restartAfterUpdate) {
         [self postReloadNotification];
       }
       callback(@[@(YES),@(NO)]);
-      
     }
   } withProgress:^(float progress) {
     // 下载进度
@@ -111,7 +106,7 @@ RCT_EXPORT_METHOD(checkForHotUpdate:(int)versionCode
   NSString *bundlePlistPath = [self getBundlePlistPath];
   
   if ([fm fileExistsAtPath:bundlePlistPath]) {
-    // 热更新过 判断当前的热更新版本
+    // 热更新过 判断当前的热更新版本小于服务器的版本 则执行更新
     NSMutableArray *bundleArr = [NSMutableArray arrayWithContentsOfFile:bundlePlistPath];
     if(bundleArr.count > 0){
       NSString *currentVersion = [bundleArr lastObject][@"version"];
@@ -194,6 +189,14 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
     return tempUrl;
 }
 
++(NSString *)getAppVersion{
+    return [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+}
+
++(NSString *)getAppBuild{
+    return [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
+}
+
 +(NSURL *)bundleURL{
     
     // 首次下载完成 无法校验 只有加载成功才能知道bundle可用 status会置为1
@@ -211,20 +214,15 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
     NSString *hotBundle = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:HotUpdatePath] stringByAppendingPathComponent:@"bundles"];
     
     if ([fm fileExistsAtPath:plistPath isDirectory:&isDir]) {
-      NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
-        // 有热更包
-        // 过滤status == 0的
-//        NSMutableArray *tempArr = [NSMutableArray array];
-//        for (NSDictionary *dic in arr) {
-//            if ([dic[@"status"] isEqualToString:@"1"]) {
-//                [tempArr addObject:dic];
-//            }
-//        }
+        NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
         if (arr.count > 0) {
             NSDictionary *currentDic = [arr lastObject];
             NSString *path = currentDic[@"path"];
+            NSString *appVersion = currentDic[@"appVersion"];
+            NSString *appBuild = currentDic[@"appBuild"];
             NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",path];
-            if ([fm fileExistsAtPath:finalStr]) {
+            // 存在bundle包 且该bundle包的version build与app当前一致 才去加载热更包
+            if ([fm fileExistsAtPath:finalStr] && [appVersion isEqualToString:[self getAppVersion]] && [appBuild isEqualToString:[self getAppBuild]]) {
                 return [NSURL URLWithString:finalStr];
             }
         }
