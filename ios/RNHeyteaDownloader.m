@@ -71,7 +71,7 @@ didFinishDownloadingToURL:(NSURL *)location{
   NSString *contentStr = [NSString stringWithContentsOfFile:bundlePath encoding:NSUTF8StringEncoding error:nil];
   NSString *md5Str = [MD5Manager md5:contentStr];
   
-  if(![md5Str isEqualToString:self.md5]) {
+  if([md5Str isEqualToString:self.md5]) {
     // 更新plist文件
     [self updateVersionPlist];
     self.resBlock(@"success");
@@ -93,11 +93,11 @@ didFinishDownloadingToURL:(NSURL *)location{
   NSMutableArray *plistArr = [NSMutableArray array];
   if ([fm fileExistsAtPath:plistPath isDirectory:&isDir]) {
     plistArr = [NSMutableArray arrayWithContentsOfFile:plistPath];
-      NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild };
+      NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild,@"isLoad":@"0" };
     [plistArr addObject:dic];
     [plistArr writeToFile:plistPath atomically:YES];
   }else{
-    NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild };
+      NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild,@"isLoad":@"0" };
     [plistArr addObject:dic];
     [plistArr writeToFile:plistPath atomically:YES];
   }

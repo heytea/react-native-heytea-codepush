@@ -199,11 +199,6 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
 
 +(NSURL *)bundleURL{
     
-    // 首次下载完成 无法校验 只有加载成功才能知道bundle可用 status会置为1
-//    if (currentURL) {
-//        return currentURL;
-//    }
-    
     BOOL isDir = NO;
     NSFileManager *fm = [NSFileManager defaultManager];
     
@@ -215,20 +210,51 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
     
     if ([fm fileExistsAtPath:plistPath isDirectory:&isDir]) {
         NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
+        // 过滤掉已加载且失败的包 不过滤未加载的
+        NSMutableArray *tempArr = [NSMutableArray array];
         if (arr.count > 0) {
-            NSDictionary *currentDic = [arr lastObject];
+            for (NSDictionary *dic in arr) {
+                if ([dic[@"status"] isEqualToString:@"0"] && [dic[@"isLoad"] isEqualToString:@"1"]) {
+                    // 已加载但未成功 过滤掉
+                }else{
+                    [tempArr addObject:dic];
+                }
+            }
+        }
+        
+        if (tempArr.count > 0) {
+            NSDictionary *currentDic = [tempArr lastObject];
             NSString *path = currentDic[@"path"];
             NSString *appVersion = currentDic[@"appVersion"];
             NSString *appBuild = currentDic[@"appBuild"];
             NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",path];
             // 存在bundle包 且该bundle包的version build与app当前一致 才去加载热更包
             if ([fm fileExistsAtPath:finalStr] && [appVersion isEqualToString:[self getAppVersion]] && [appBuild isEqualToString:[self getAppBuild]]) {
+                
+                if([currentDic[@"isLoad"] isEqualToString:@"0"]){
+                    //首次加载 设置为已加载
+                    [self configIsLoadWithVersion:path];
+                }
                 return [NSURL URLWithString:finalStr];
             }
         }
     }
     
     return [self getLastBundleURL];
+}
+
+// 把第一次加载的包置为已加载
++(void)configIsLoadWithVersion:(NSString *)version{
+    // 存储热更版本和路径的plist
+    NSString *plistPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"bundle.plist"];
+    NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
+    for (NSDictionary *dic in arr) {
+        if (dic[@"isLoad"] && [dic[@"isLoad"] isEqualToString: @"0"]) {
+            [dic setValue:@"1" forKey:@"isLoad"];
+        }
+    }
+    // 修改完 isLoad 写入
+    [arr writeToFile:plistPath atomically:YES];
 }
 
 
