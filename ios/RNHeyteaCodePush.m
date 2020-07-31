@@ -220,7 +220,10 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
                     [tempArr addObject:dic];
                 }
             }
+            [tempArr writeToFile:plistPath atomically:YES];
         }
+        
+       
         
         if (tempArr.count > 0) {
             NSDictionary *currentDic = [tempArr lastObject];
@@ -249,7 +252,7 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
     NSString *plistPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"bundle.plist"];
     NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
     for (NSDictionary *dic in arr) {
-        if (dic[@"isLoad"] && [dic[@"isLoad"] isEqualToString: @"0"]) {
+        if ([dic[@"path"] isEqualToString:version] && [dic[@"isLoad"] isEqualToString: @"0"]) {
             [dic setValue:@"1" forKey:@"isLoad"];
         }
     }
