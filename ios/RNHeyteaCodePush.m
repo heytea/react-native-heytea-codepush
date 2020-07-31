@@ -7,27 +7,17 @@
 //
 
 #import "RNHeyteaCodePush.h"
-//#import <MBProgressHUD.h>
-#import <SSZipArchive.h>
 #import "RNHeyteaDownloader.h"
 #import <React/RCTConvert.h>
 
 #define ReloadBundle   @"ReloadBundle"
 #define HotUpdatePath  @"HotUpdateBundle"
 #define HotUpdateProgress @"syncProgress"
+#define DevBundlePath @"DevRNBundle"
 
-NSString *const AppId = @"";
-
-
-@protocol RNCodePushDelegate <NSObject>
--(void)reloadBundle;
-@end
+//static NSURL *currentURL = nil;
 
 @interface RNHeyteaCodePush() <RCTBridgeModule>
-
-//@property(nonatomic,strong)MBProgressHUD *hud;
-@property(nonatomic,assign)float progressValue;
-@property(nonatomic,weak) id <RNCodePushDelegate> codepushDelegate;
 
 @end
 
@@ -37,9 +27,9 @@ NSString *const AppId = @"";
 RCT_EXPORT_MODULE(ReactNativeHeyteaCodepush)
 
 
-//-(dispatch_queue_t)methodQueue{
-//  return dispatch_get_main_queue();
-//}
+-(dispatch_queue_t)methodQueue{
+  return dispatch_get_main_queue();
+}
 
 - (NSArray<NSString *> *)supportedEvents
 {
@@ -47,7 +37,7 @@ RCT_EXPORT_MODULE(ReactNativeHeyteaCodepush)
 }
 
 -(void)sendNotificationToJsWithProgress:(NSString *)progress{
-  [self sendEventWithName:HotUpdateProgress body: @{@"progress":progress}];
+  [self sendEventWithName:HotUpdateProgress body: progress];
 }
 
 RCT_EXPORT_METHOD(syncHot
@@ -57,13 +47,6 @@ RCT_EXPORT_METHOD(syncHot
                   :(NSString *)url
                   :(RCTResponseSenderBlock)callback
                   ){
-  
-  // 下载bundle
-//  UIViewController *currentVc = [self getCurrentViewController];
-//  MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:currentVc.view animated:YES];
-//  hud.mode = MBProgressHUDModeAnnularDeterminate;
-//  hud.label.text = @"下载中...";
-//  self.hud = hud;
   
   NSString *versionStr = [NSString stringWithFormat:@"%d",versionCode];
   NSDictionary *data = @{
@@ -78,14 +61,15 @@ RCT_EXPORT_METHOD(syncHot
     
     if([code isEqualToString:@"fail"]){
       // 下载失败
-        callback(@[[NSNull null],@"1"]);
+//      currentURL = nil;
+      callback(@[@(NO),@(YES)]);
+        
     }else{
      // 下载成功
       if (restartAfterUpdate) {
         [self postReloadNotification];
       }
-       callback(@[@"1",[NSNull null]]);
-      
+      callback(@[@(YES),@(NO)]);
     }
   } withProgress:^(float progress) {
     // 下载进度
@@ -122,23 +106,21 @@ RCT_EXPORT_METHOD(checkForHotUpdate:(int)versionCode
   NSString *bundlePlistPath = [self getBundlePlistPath];
   
   if ([fm fileExistsAtPath:bundlePlistPath]) {
-    // 热更新过 判断当前的热更新版本
+    // 热更新过 判断当前的热更新版本小于服务器的版本 则执行更新
     NSMutableArray *bundleArr = [NSMutableArray arrayWithContentsOfFile:bundlePlistPath];
     if(bundleArr.count > 0){
       NSString *currentVersion = [bundleArr lastObject][@"version"];
-        if ([currentVersion intValue] == versionCode) {
-          // 版本号相同 无需热更新
-          NSError *err = [NSError errorWithDomain:@"" code:0 userInfo:nil];
-          reject(@"0",@"version is same",err);
+        if ([currentVersion intValue] < versionCode) {
+          resolve(@(YES));
         }else{
-          resolve(@1);
+          resolve(@(NO));
         }
     }else{
-      resolve(@1);
+      resolve(@(YES));
     }
   }else{
     // 没有热更新过
-    resolve(@1);
+    resolve(@(YES));
   }
   
 }
@@ -154,10 +136,10 @@ RCT_EXPORT_METHOD(checkForAppUpdate:(int)versionCode
   int buidCode = [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] intValue];
   if (versionCode > buidCode) {
     // app 版本更新
-    resolve(@1);
+    resolve(@(YES));
   }else {
     // 热更新
-    resolve(@0);
+    resolve(@(NO));
   }
 }
 
@@ -191,6 +173,88 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
   NSString *docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
   NSString *bundlePath = [docPath stringByAppendingPathComponent:HotUpdatePath];
   return bundlePath;
+}
+
+
++(NSURL *)getLastBundleURL{
+    NSURL *tempUrl;
+    #ifdef DEBUG
+    //bundle文件加载
+    NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
+    NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
+    tempUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.jsbundle"]];
+    #else
+    tempUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+    #endif
+    return tempUrl;
+}
+
++(NSString *)getAppVersion{
+    return [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+}
+
++(NSString *)getAppBuild{
+    return [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
+}
+
++(NSURL *)bundleURL{
+    
+    BOOL isDir = NO;
+    NSFileManager *fm = [NSFileManager defaultManager];
+    
+    // 存储热更版本和路径的plist
+    NSString *plistPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"bundle.plist"];
+    
+    // 热更新包存储路径
+    NSString *hotBundle = [[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:HotUpdatePath] stringByAppendingPathComponent:@"bundles"];
+    
+    if ([fm fileExistsAtPath:plistPath isDirectory:&isDir]) {
+        NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
+        // 过滤掉已加载且失败的包 不过滤未加载的
+        NSMutableArray *tempArr = [NSMutableArray array];
+        if (arr.count > 0) {
+            for (NSDictionary *dic in arr) {
+                if ([dic[@"status"] isEqualToString:@"0"] && [dic[@"isLoad"] isEqualToString:@"1"]) {
+                    // 已加载但未成功 过滤掉
+                }else{
+                    [tempArr addObject:dic];
+                }
+            }
+        }
+        
+        if (tempArr.count > 0) {
+            NSDictionary *currentDic = [tempArr lastObject];
+            NSString *path = currentDic[@"path"];
+            NSString *appVersion = currentDic[@"appVersion"];
+            NSString *appBuild = currentDic[@"appBuild"];
+            NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",path];
+            // 存在bundle包 且该bundle包的version build与app当前一致 才去加载热更包
+            if ([fm fileExistsAtPath:finalStr] && [appVersion isEqualToString:[self getAppVersion]] && [appBuild isEqualToString:[self getAppBuild]]) {
+                
+                if([currentDic[@"isLoad"] isEqualToString:@"0"]){
+                    //首次加载 设置为已加载
+                    [self configIsLoadWithVersion:path];
+                }
+                return [NSURL URLWithString:finalStr];
+            }
+        }
+    }
+    
+    return [self getLastBundleURL];
+}
+
+// 把第一次加载的包置为已加载
++(void)configIsLoadWithVersion:(NSString *)version{
+    // 存储热更版本和路径的plist
+    NSString *plistPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"bundle.plist"];
+    NSMutableArray *arr = [NSMutableArray arrayWithContentsOfFile:plistPath];
+    for (NSDictionary *dic in arr) {
+        if (dic[@"isLoad"] && [dic[@"isLoad"] isEqualToString: @"0"]) {
+            [dic setValue:@"1" forKey:@"isLoad"];
+        }
+    }
+    // 修改完 isLoad 写入
+    [arr writeToFile:plistPath atomically:YES];
 }
 
 

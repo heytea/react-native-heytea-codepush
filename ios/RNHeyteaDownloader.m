@@ -7,7 +7,7 @@
 //
 
 #import "RNHeyteaDownloader.h"
-#import <SSZipArchive.h>
+#import "SSZipArchive.h"
 #import "MD5Manager.h"
 #import <React/RCTConvert.h>
 
@@ -67,7 +67,7 @@ didFinishDownloadingToURL:(NSURL *)location{
    NSString *curBundlePath = [hotBundlesPath stringByAppendingPathComponent:self.versionCode];
    [SSZipArchive unzipFileAtPath:location.path toDestination:curBundlePath];
   
-  NSString *bundlePath = [curBundlePath stringByAppendingPathComponent:@"/bundle-ios/index/main.bundle"];
+  NSString *bundlePath = [curBundlePath stringByAppendingPathComponent:@"/bundle-ios/index/main.jsbundle"];
   NSString *contentStr = [NSString stringWithContentsOfFile:bundlePath encoding:NSUTF8StringEncoding error:nil];
   NSString *md5Str = [MD5Manager md5:contentStr];
   
@@ -86,16 +86,18 @@ didFinishDownloadingToURL:(NSURL *)location{
  // 把版本号 和bundle 路径保存到plist文件
 -(void)updateVersionPlist{
   BOOL isDir = NO;
+  NSString *appVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+  NSString *appBuild = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
   NSString *plistPath = [self getBundlePlistPath];
   NSFileManager *fm = [NSFileManager defaultManager];
   NSMutableArray *plistArr = [NSMutableArray array];
   if ([fm fileExistsAtPath:plistPath isDirectory:&isDir]) {
     plistArr = [NSMutableArray arrayWithContentsOfFile:plistPath];
-    NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0"};
+      NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild,@"isLoad":@"0" };
     [plistArr addObject:dic];
     [plistArr writeToFile:plistPath atomically:YES];
   }else{
-    NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0"};
+      NSDictionary *dic = @{@"version":self.versionCode,@"path":self.versionCode,@"status":@"0",@"appVersion":appVersion,@"appBuild":appBuild,@"isLoad":@"0" };
     [plistArr addObject:dic];
     [plistArr writeToFile:plistPath atomically:YES];
   }
