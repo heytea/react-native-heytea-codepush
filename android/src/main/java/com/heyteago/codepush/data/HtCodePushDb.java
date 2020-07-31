@@ -11,7 +11,7 @@ import com.heyteago.codepush.data.dao.TempDao;
 import com.heyteago.codepush.data.entity.IndexUpdateEntity;
 import com.heyteago.codepush.data.entity.TempEntity;
 
-@Database(entities = {IndexUpdateEntity.class, TempEntity.class}, version = 2, exportSchema = false)
+@Database(entities = {IndexUpdateEntity.class, TempEntity.class}, version = 3, exportSchema = false)
 public abstract class HtCodePushDb extends RoomDatabase {
     private static HtCodePushDb instance;
 

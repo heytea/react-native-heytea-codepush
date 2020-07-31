@@ -47,6 +47,11 @@ public class IndexFlowDelegate extends FlowDelegate {
         // 查询更新表bundle版本，不包括逻辑删除
         IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByIsFailOrIsTemp(false, true);
         if (updateEntities.length > 0 && FileHelper.isExists(updateEntities[0].getBundleFile())) {
+            // 判断App版本号是否一致，热更新包是依赖于App版本号的
+            String localVersionName = Utils.getVersionName(mContext);
+            if (!localVersionName.equals(updateEntities[0].getVersionName())) {
+                return null;
+            }
             // 复位temp标志位
             for (IndexUpdateEntity updateEntity : updateEntities) {
                 updateEntity.setTemp(false);
@@ -54,6 +59,7 @@ public class IndexFlowDelegate extends FlowDelegate {
             mIndexUpdateDao.updateEntities(updateEntities);
             // 用于记录该次的id，当js调用loadSuccess的时候可以找到它
             setTempUpdateId(updateEntities[0].getId());
+
             return updateEntities[0].getBundleFile();
         }
         return null;
@@ -62,7 +68,9 @@ public class IndexFlowDelegate extends FlowDelegate {
     @Override
     public boolean checkForHotUpdate(int versionCode) throws Throwable {
         try {
-            IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findAll();
+            String localVersionName = Utils.getVersionName(mContext);
+            // 热更新是依赖于App版本号的
+            IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByVersionName(localVersionName);
             if (updateEntities.length > 0) {
                 if (!FileHelper.isExists(updateEntities[0].getBundleFile())) {
                     return true;
@@ -201,9 +209,13 @@ public class IndexFlowDelegate extends FlowDelegate {
         updateEntity.setDownloadUrl(downloadUrl);
         updateEntity.setFail(true); // 添加到表的时候，默认为失败，当js端调用loadSuccess后，再将fail置为false，temp置为false
         updateEntity.setTemp(true); // 临时标志位temp，加载后就置为false
+        updateEntity.setVersionName(Utils.getVersionName(mContext));
         mIndexUpdateDao.insertEntities(updateEntity);
     }
 
+    /**
+     ******************** KV存储 ********************
+     */
     private void setTempUpdateId(long updateId) {
         String key = "TempUpdateId";
         TempEntity[] tempEntities = mTempDao.findByKey(key);
@@ -226,4 +238,5 @@ public class IndexFlowDelegate extends FlowDelegate {
         }
         return -1;
     }
+
 }

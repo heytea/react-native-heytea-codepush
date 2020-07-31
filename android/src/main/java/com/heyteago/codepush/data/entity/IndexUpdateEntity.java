@@ -12,7 +12,9 @@ public class IndexUpdateEntity {
     private String bundleFile; // bundle文件路径
     private String md5;
     @ColumnInfo(name = "version_code")
-    private int versionCode;
+    private int versionCode; // 版本号
+    @ColumnInfo(name = "version_name")
+    private String versionName; // 版本名称
     @ColumnInfo(name = "create_at")
     private String createAt;
     @ColumnInfo(name = "is_delete")
@@ -54,6 +56,14 @@ public class IndexUpdateEntity {
 
     public void setVersionCode(int versionCode) {
         this.versionCode = versionCode;
+    }
+
+    public String getVersionName() {
+        return versionName;
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
     }
 
     public String getCreateAt() {
