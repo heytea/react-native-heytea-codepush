@@ -66,20 +66,10 @@ didFinishDownloadingToURL:(NSURL *)location{
   // 解压到bundles 文件夹下
    NSString *curBundlePath = [hotBundlesPath stringByAppendingPathComponent:self.versionCode];
    [SSZipArchive unzipFileAtPath:location.path toDestination:curBundlePath];
-  
-  NSString *bundlePath = [curBundlePath stringByAppendingPathComponent:@"/bundle-ios/index/main.jsbundle"];
-  NSString *contentStr = [NSString stringWithContentsOfFile:bundlePath encoding:NSUTF8StringEncoding error:nil];
-  NSString *md5Str = [MD5Manager md5:contentStr];
-  
-  if([md5Str isEqualToString:self.md5]) {
+    
     // 更新plist文件
     [self updateVersionPlist];
     self.resBlock(@"success");
-  }else{
-    // bundle文件不同 热更失败 移除已下载的文件
-    [fm removeItemAtPath:curBundlePath error:nil];
-    self.resBlock(@"fail");
-  }
 
 }
 
@@ -117,7 +107,7 @@ didCompleteWithError:(nullable NSError *)error{
         totalBytesWritten:(int64_t)totalBytesWritten
 totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite{
   float progress = (float) totalBytesWritten / totalBytesExpectedToWrite;
-  self.proBlock(progress);
+  self.proBlock(progress*100);
 
 }
 
