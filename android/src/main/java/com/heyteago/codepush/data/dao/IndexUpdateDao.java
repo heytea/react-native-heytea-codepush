@@ -23,7 +23,7 @@ public interface IndexUpdateDao {
     @Query("SELECT * FROM index_update WHERE id = :id")
     IndexUpdateEntity[] findById(long id);
 
-    @Query("SELECT * FROM index_update WHERE version_name = :versionName")
+    @Query("SELECT * FROM index_update WHERE version_name = :versionName ORDER BY version_code DESC")
     IndexUpdateEntity[] findByVersionName(String versionName);
 
     @Update
