@@ -106,8 +106,8 @@ didCompleteWithError:(nullable NSError *)error{
              didWriteData:(int64_t)bytesWritten
         totalBytesWritten:(int64_t)totalBytesWritten
 totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite{
-  float progress = (float) totalBytesWritten / totalBytesExpectedToWrite;
-  self.proBlock(progress*100);
+  int progress = (int) (totalBytesWritten / totalBytesExpectedToWrite)*100;
+  self.proBlock(progress);
 
 }
 

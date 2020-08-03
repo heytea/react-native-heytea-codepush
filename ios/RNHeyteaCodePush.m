@@ -64,12 +64,12 @@ RCT_EXPORT_METHOD(syncHot
       callback(@[@(NO),@(YES)]);
     }else{
      // 下载成功
-      [self postReloadNotification];
       callback(@[@(YES),@(NO)]);
+      [self postReloadNotification];
     }
-  } withProgress:^(float progress) {
+  } withProgress:^(int progress) {
     // 下载进度
-    NSString *progressStr = [NSString stringWithFormat:@"%f",progress];
+    NSString *progressStr = [NSString stringWithFormat:@"%d",progress];
     [self sendNotificationToJsWithProgress:progressStr];
     
   }];
