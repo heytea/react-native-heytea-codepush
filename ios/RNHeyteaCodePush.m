@@ -61,14 +61,10 @@ RCT_EXPORT_METHOD(syncHot
     
     if([code isEqualToString:@"fail"]){
       // 下载失败
-//      currentURL = nil;
       callback(@[@(NO),@(YES)]);
-        
     }else{
      // 下载成功
-      if (restartAfterUpdate) {
-        [self postReloadNotification];
-      }
+      [self postReloadNotification];
       callback(@[@(YES),@(NO)]);
     }
   } withProgress:^(float progress) {
