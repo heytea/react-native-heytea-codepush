@@ -46,15 +46,15 @@ public class IndexFlowDelegate extends FlowDelegate {
     public String getJsBundleFile() {
         // 查询更新表bundle版本，不包括逻辑删除
         IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByIsFailOrIsTemp(false, true);
+        // 复位temp标志位
+        for (IndexUpdateEntity updateEntity : updateEntities) {
+            updateEntity.setTemp(false);
+        }
         if (updateEntities.length > 0 && FileHelper.isExists(updateEntities[0].getBundleFile())) {
             // 判断App版本号是否一致，热更新包是依赖于App版本号的
             String localVersionName = Utils.getVersionName(mContext);
             if (!localVersionName.equals(updateEntities[0].getVersionName())) {
                 return null;
-            }
-            // 复位temp标志位
-            for (IndexUpdateEntity updateEntity : updateEntities) {
-                updateEntity.setTemp(false);
             }
             mIndexUpdateDao.updateEntities(updateEntities);
             // 用于记录该次的id，当js调用loadSuccess的时候可以找到它
@@ -72,9 +72,6 @@ public class IndexFlowDelegate extends FlowDelegate {
             // 热更新是依赖于App版本号的
             IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByVersionName(localVersionName);
             if (updateEntities.length > 0) {
-                if (!FileHelper.isExists(updateEntities[0].getBundleFile())) {
-                    return true;
-                }
                 return versionCode > updateEntities[0].getVersionCode();
             }
             return true;
