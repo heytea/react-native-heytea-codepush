@@ -50,17 +50,19 @@ public class IndexFlowDelegate extends FlowDelegate {
         for (IndexUpdateEntity updateEntity : updateEntities) {
             updateEntity.setTemp(false);
         }
-        if (updateEntities.length > 0 && FileHelper.isExists(updateEntities[0].getBundleFile())) {
-            // 判断App版本号是否一致，热更新包是依赖于App版本号的
-            String localVersionName = Utils.getVersionName(mContext);
-            if (!localVersionName.equals(updateEntities[0].getVersionName())) {
-                return null;
-            }
-            mIndexUpdateDao.updateEntities(updateEntities);
-            // 用于记录该次的id，当js调用loadSuccess的时候可以找到它
-            setTempUpdateId(updateEntities[0].getId());
+        mIndexUpdateDao.updateEntities(updateEntities);
+        for (IndexUpdateEntity updateEntity : updateEntities) {
+            if (FileHelper.isExists(updateEntity.getBundleFile())) {
+                // 判断App版本号是否一致，热更新包是依赖于App版本号的
+                String localVersionName = Utils.getVersionName(mContext);
+                if (!localVersionName.equals(updateEntity.getVersionName())) {
+                    return null;
+                }
+                // 用于记录该次的id，当js调用loadSuccess的时候可以找到它
+                setTempUpdateId(updateEntity.getId());
 
-            return updateEntities[0].getBundleFile();
+                return updateEntity.getBundleFile();
+            }
         }
         return null;
     }
