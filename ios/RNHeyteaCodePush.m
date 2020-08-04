@@ -67,9 +67,10 @@ RCT_EXPORT_METHOD(syncHot
       callback(@[@(YES),@(NO)]);
       [self postReloadNotification];
     }
-  } withProgress:^(int progress) {
+  } withProgress:^(float progress) {
     // 下载进度
-    NSString *progressStr = [NSString stringWithFormat:@"%d",progress];
+    int progress1 = (int) progress * 100;
+    NSString *progressStr = [NSString stringWithFormat:@"%d",progress1];
     [self sendNotificationToJsWithProgress:progressStr];
     
   }];
