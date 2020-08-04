@@ -11,7 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef void(^ResultBlock)(NSString * code);
-typedef void(^ProgressBlock)(int progress);
+typedef void(^ProgressBlock)(float progress);
 
 @interface RNHeyteaDownloader : NSObject <NSURLSessionDownloadDelegate>
 
