@@ -179,7 +179,7 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
     //bundle文件加载
     NSString *filePath = [NSHomeDirectory() stringByAppendingString:@"/Documents"];
     NSString *devBundleDir = [filePath stringByAppendingPathComponent:DevBundlePath];
-    tempUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/index/main.jsbundle"]];
+    tempUrl = [NSURL URLWithString:[devBundleDir stringByAppendingPathComponent:@"bundles/bundle-ios/main.jsbundle"]];
     #else
     tempUrl = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
     #endif
@@ -227,7 +227,7 @@ RCT_EXPORT_METHOD(synciOSApp:(NSString *)url){
             NSString *path = currentDic[@"path"];
             NSString *appVersion = currentDic[@"appVersion"];
             NSString *appBuild = currentDic[@"appBuild"];
-            NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/index/main.jsbundle",path];
+            NSString *finalStr = [hotBundle stringByAppendingFormat:@"/%@/bundle-ios/main.jsbundle",path];
             // 存在bundle包 且该bundle包的version build与app当前一致 才去加载热更包
             if ([fm fileExistsAtPath:finalStr] && [appVersion isEqualToString:[self getAppVersion]] && [appBuild isEqualToString:[self getAppBuild]]) {
                 
