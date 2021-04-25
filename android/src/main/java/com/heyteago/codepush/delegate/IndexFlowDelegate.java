@@ -1,6 +1,9 @@
 package com.heyteago.codepush.delegate;
 
 import android.content.Context;
+import android.text.TextUtils;
+
+import com.google.gson.Gson;
 import com.heyteago.codepush.data.HtCodePushDb;
 import com.heyteago.codepush.data.dao.IndexUpdateDao;
 import com.heyteago.codepush.data.dao.TempDao;
@@ -9,6 +12,7 @@ import com.heyteago.codepush.data.entity.TempEntity;
 import com.heyteago.codepush.util.DownloadUtil;
 import com.heyteago.codepush.util.FileHelper;
 import com.heyteago.codepush.util.Utils;
+import com.heyteago.codepush.vo.BundleConfig;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -26,45 +30,28 @@ public class IndexFlowDelegate extends FlowDelegate {
         mTempDao = HtCodePushDb.getDb(context).tempDao();
     }
 
-    /**
-     * 加载bundle成功后，调用该函数，用于判断热更新的成功、失败，以判断是否回滚操作
-     */
-    @Override
-    public void loadBundleSuccess() {
-       long tempUpdateId = getTempUpdateId();
-        if (tempUpdateId > 0) {
-            IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findById(tempUpdateId);
-            for (IndexUpdateEntity updateEntity : updateEntities) {
-                updateEntity.setFail(false);
-                updateEntity.setTemp(false);
-            }
-            mIndexUpdateDao.updateEntities(updateEntities);
-        }
-    }
-
     @Override
     public String getJsBundleFile() {
+        String localVersionName = Utils.getVersionName(mContext);
         // 查询更新表bundle版本，不包括逻辑删除
-        IndexUpdateEntity[] updateEntities = mIndexUpdateDao.findByIsFailOrIsTemp(false, true);
-        // 复位temp标志位
-        for (IndexUpdateEntity updateEntity : updateEntities) {
-            updateEntity.setTemp(false);
-        }
-        mIndexUpdateDao.updateEntities(updateEntities);
-        for (IndexUpdateEntity updateEntity : updateEntities) {
-            if (FileHelper.isExists(updateEntity.getBundleFile())) {
-                // 判断App版本号是否一致，热更新包是依赖于App版本号的
-                String localVersionName = Utils.getVersionName(mContext);
-                if (!localVersionName.equals(updateEntity.getVersionName())) {
-                    return null;
-                }
-                // 用于记录该次的id，当js调用loadSuccess的时候可以找到它
-                setTempUpdateId(updateEntity.getId());
-
-                return updateEntity.getBundleFile();
+        IndexUpdateEntity[] entities = mIndexUpdateDao.findByIsFailAndVersionName(false, localVersionName);
+        for (IndexUpdateEntity entity : entities) {
+            if (FileHelper.isExists(entity.getBundleFile())) {
+                return entity.getBundleFile();
             }
         }
         return null;
+    }
+
+    @Override
+    public void loadFail() {
+        String localVersionName = Utils.getVersionName(mContext);
+        IndexUpdateEntity[] entities = mIndexUpdateDao.findByIsFailAndVersionName(false, localVersionName);
+        if (entities.length > 0) {
+            IndexUpdateEntity entity = entities[0];
+            entity.setFail(true);
+            mIndexUpdateDao.updateEntities(entity);
+        }
     }
 
     @Override
@@ -120,8 +107,36 @@ public class IndexFlowDelegate extends FlowDelegate {
                         //     return;
                         // }
                         FileHelper.unzip(file.getPath(), file.getParent());
-                        String bundlePath = file.getParent() + "/bundle-android/index/index.android.bundle";
-                        saveUpdateTable(url, bundlePath, versionCode, md5);
+                        String bundlePath = file.getParent() + "/bundle-android/index.android.bundle";
+                        if (!new File(bundlePath).exists()) {
+                            if (onDownloadListener != null) {
+                                onDownloadListener.onFail(new Exception("没有找到index.android.bundle，更新失败"));
+                            }
+                            saveUpdateTable(url, bundlePath, versionCode, md5, true);
+                            return;
+                        }
+                        // 读取配置信息，判断是否支持最低版本更新，如果没有这个配置文件，则直接认为更新失败
+                        String configFilePath = file.getParent() + "/bundle-android/config.json";
+                        String configStr = FileHelper.readFileString(configFilePath);
+                        if (TextUtils.isEmpty(configStr)) {
+                            if (onDownloadListener != null) {
+                                onDownloadListener.onFail(new Exception("没有读取到热更包中的配置文件，更新失败"));
+                            }
+                            saveUpdateTable(url, bundlePath, versionCode, md5, true);
+                            return;
+                        }
+                        Gson gson = new Gson();
+                        BundleConfig bundleConfig = gson.fromJson(configStr, BundleConfig.class);
+                        String localVersionName = Utils.getVersionName(mContext);
+                        int diff = Utils.compareVersion(localVersionName, bundleConfig.getMinVersion());
+                        if (diff < 0) {
+                            if (onDownloadListener != null) {
+                                onDownloadListener.onFail(new Exception("当前版本小于热更包最小支持的版本，更新失败"));
+                            }
+                            saveUpdateTable(url, bundlePath, versionCode, md5, true);
+                            return;
+                        }
+                        saveUpdateTable(url, bundlePath, versionCode, md5, false);
                         if (onDownloadListener != null) {
                             onDownloadListener.onSuccess(file);
                         }
@@ -198,7 +213,7 @@ public class IndexFlowDelegate extends FlowDelegate {
     /**
      * 更新【更新表】
      */
-    private void saveUpdateTable(String downloadUrl, String bundlePath, int versionCode, String md5) {
+    private void saveUpdateTable(String downloadUrl, String bundlePath, int versionCode, String md5, boolean isFail) {
         mIndexUpdateDao.deleteByVersionCode(versionCode);
         IndexUpdateEntity updateEntity = new IndexUpdateEntity();
         updateEntity.setBundleFile(bundlePath);
@@ -206,36 +221,9 @@ public class IndexFlowDelegate extends FlowDelegate {
         updateEntity.setMd5(md5);
         updateEntity.setCreateAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         updateEntity.setDownloadUrl(downloadUrl);
-        updateEntity.setFail(true); // 添加到表的时候，默认为失败，当js端调用loadSuccess后，再将fail置为false，temp置为false
-        updateEntity.setTemp(true); // 临时标志位temp，加载后就置为false
+        updateEntity.setFail(isFail);
         updateEntity.setVersionName(Utils.getVersionName(mContext));
         mIndexUpdateDao.insertEntities(updateEntity);
-    }
-
-    /**
-     ******************** KV存储 ********************
-     */
-    private void setTempUpdateId(long updateId) {
-        String key = "TempUpdateId";
-        TempEntity[] tempEntities = mTempDao.findByKey(key);
-        if (tempEntities.length > 0) {
-            tempEntities[0].setUpdateId(updateId);
-            mTempDao.updateTempEntities(tempEntities[0]);
-            return;
-        }
-        TempEntity saveTemp = new TempEntity();
-        saveTemp.setKey(key);
-        saveTemp.setUpdateId(updateId);
-        mTempDao.insertTempEntities(saveTemp);
-    }
-
-    private long getTempUpdateId() {
-        String key = "TempUpdateId";
-        TempEntity[] tempEntities = mTempDao.findByKey(key);
-        if (tempEntities.length > 0) {
-            return tempEntities[0].getUpdateId();
-        }
-        return -1;
     }
 
 }

@@ -13,9 +13,12 @@ import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -208,4 +211,19 @@ public class FileHelper {
         return flag;
     }
 
+    public static String readFileString(final String filePath) {
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                return null;
+            }
+            char[] charArr = new char[2048]; // 创建可容纳 2048 个字符的数组
+            FileReader b = new FileReader(filePath);
+            int iNum = b.read(charArr);
+            return new String(charArr, 0, iNum);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

@@ -18,6 +18,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.heyteago.codepush.delegate.FlowDelegate;
+import com.heyteago.codepush.util.Utils;
 
 import java.io.File;
 
@@ -51,10 +52,12 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
         return "ReactNativeHeyteaCodepush";
     }
 
+
     @ReactMethod
-    public void loadSuccess() {
-        mFlowDelegate.loadBundleSuccess();
+    public void loadFail() {
+        mFlowDelegate.loadFail();
     }
+
 
     @ReactMethod
     public void checkForHotUpdate(int versionCode, Promise promise) {

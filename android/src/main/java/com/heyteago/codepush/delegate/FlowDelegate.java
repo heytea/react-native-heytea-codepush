@@ -5,9 +5,9 @@ import java.io.File;
 
 public abstract class FlowDelegate {
 
-    public abstract void loadBundleSuccess();
-
     public abstract String getJsBundleFile();
+
+    public abstract void loadFail();
 
     public abstract boolean checkForHotUpdate(int versionCode) throws Throwable;
 

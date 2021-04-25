@@ -21,8 +21,6 @@ public class IndexUpdateEntity {
     private boolean isDelete = false; // 逻辑删除
     @ColumnInfo(name = "is_fail")
     private boolean isFail = false; // 更新失败
-    @ColumnInfo(name = "is_temp")
-    private boolean isTemp; // 是否临时，
     @ColumnInfo(name = "download_url")
     private String downloadUrl; // bundle下载链接
 
@@ -90,14 +88,6 @@ public class IndexUpdateEntity {
         isFail = fail;
     }
 
-    public boolean isTemp() {
-        return isTemp;
-    }
-
-    public void setTemp(boolean temp) {
-        isTemp = temp;
-    }
-
     public String getDownloadUrl() {
         return downloadUrl;
     }
@@ -117,7 +107,6 @@ public class IndexUpdateEntity {
                 ", createAt='" + createAt + '\'' +
                 ", isDelete=" + isDelete +
                 ", isFail=" + isFail +
-                ", isTemp=" + isTemp +
                 ", downloadUrl='" + downloadUrl + '\'' +
                 '}';
     }

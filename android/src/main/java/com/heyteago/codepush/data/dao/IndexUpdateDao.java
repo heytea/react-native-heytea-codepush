@@ -11,13 +11,10 @@ import com.heyteago.codepush.data.entity.IndexUpdateEntity;
 @Dao
 public interface IndexUpdateDao {
 
-    @Query("SELECT * FROM index_update WHERE is_fail = :isFail OR is_temp = :isTemp ORDER BY version_code DESC")
-    IndexUpdateEntity[] findByIsFailOrIsTemp(boolean isFail, boolean isTemp);
+    @Query("SELECT * FROM index_update WHERE is_fail = :isFail AND version_name = :versionName ORDER BY version_code DESC")
+    IndexUpdateEntity[] findByIsFailAndVersionName(boolean isFail, String versionName);
 
-    @Query("SELECT * FROM index_update WHERE is_temp = :isTemp ORDER BY version_code DESC")
-    IndexUpdateEntity[] findByIsTemp(boolean isTemp);
-
-    @Query("SELECT * FROM `index_update` ORDER BY version_code DESC")
+    @Query("SELECT * FROM index_update ORDER BY version_code DESC")
     IndexUpdateEntity[] findAll();
 
     @Query("SELECT * FROM index_update WHERE id = :id")
