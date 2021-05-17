@@ -18,7 +18,6 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.heyteago.codepush.delegate.FlowDelegate;
-import com.heyteago.codepush.util.Utils;
 
 import java.io.File;
 
@@ -138,6 +137,12 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
                 }
             }
         });
+    }
+
+    @ReactMethod
+    public void getHotBundleVersion(Promise promise) {
+        Integer version = mFlowDelegate.getBundleVersion();
+        promise.resolve(version);
     }
 
     private void restartApp() {

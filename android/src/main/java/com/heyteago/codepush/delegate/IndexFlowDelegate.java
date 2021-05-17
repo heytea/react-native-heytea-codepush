@@ -8,7 +8,6 @@ import com.heyteago.codepush.data.HtCodePushDb;
 import com.heyteago.codepush.data.dao.IndexUpdateDao;
 import com.heyteago.codepush.data.dao.TempDao;
 import com.heyteago.codepush.data.entity.IndexUpdateEntity;
-import com.heyteago.codepush.data.entity.TempEntity;
 import com.heyteago.codepush.util.DownloadUtil;
 import com.heyteago.codepush.util.FileHelper;
 import com.heyteago.codepush.util.Utils;
@@ -208,6 +207,19 @@ public class IndexFlowDelegate extends FlowDelegate {
                 onDownloadListener.onFail(new Exception(throwable.getMessage()));
             }
         }
+    }
+
+    @Override
+    public Integer getBundleVersion() {
+        String localVersionName = Utils.getVersionName(mContext);
+        // 查询更新表bundle版本，不包括逻辑删除
+        IndexUpdateEntity[] entities = mIndexUpdateDao.findByIsFailAndVersionName(false, localVersionName);
+        for (IndexUpdateEntity entity : entities) {
+            if (FileHelper.isExists(entity.getBundleFile())) {
+                return entity.getVersionCode();
+            }
+        }
+        return null;
     }
 
     /**
