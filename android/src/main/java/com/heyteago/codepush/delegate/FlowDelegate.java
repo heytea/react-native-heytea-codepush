@@ -16,6 +16,8 @@ public abstract class FlowDelegate {
     public abstract void syncHot(String md5, int versionCode, String url, OnDownloadListener onDownloadListener);
 
     public abstract void syncAndroidApp(String md5, int versionCode, String url, OnDownloadListener onDownloadListener);
+    
+    public abstract Integer getBundleVersion();
 
     public interface OnDownloadListener {
         void onProgress(int progress);
