@@ -140,8 +140,8 @@ public class ReactNativeHeyteaCodepushModule extends ReactContextBaseJavaModule 
     }
 
     @ReactMethod
-    public void getHotBundleVersion(Promise promise) {
-        Integer version = mFlowDelegate.getBundleVersion();
+    public void getHotVersion(Promise promise) {
+        int version = mFlowDelegate.getHotVersion();
         promise.resolve(version);
     }
 

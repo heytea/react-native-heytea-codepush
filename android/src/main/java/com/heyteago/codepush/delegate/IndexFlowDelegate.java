@@ -210,7 +210,7 @@ public class IndexFlowDelegate extends FlowDelegate {
     }
 
     @Override
-    public Integer getBundleVersion() {
+    public int getHotVersion() {
         String localVersionName = Utils.getVersionName(mContext);
         // 查询更新表bundle版本，不包括逻辑删除
         IndexUpdateEntity[] entities = mIndexUpdateDao.findByIsFailAndVersionName(false, localVersionName);
@@ -219,7 +219,7 @@ public class IndexFlowDelegate extends FlowDelegate {
                 return entity.getVersionCode();
             }
         }
-        return null;
+        return 0;
     }
 
     /**

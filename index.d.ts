@@ -41,3 +41,8 @@ export function syncAndroidApp(
  * @param {string} url App Store应用链接
  */
 export function synciOSApp(url: string): void;
+
+/**
+ * 获取热更版本。暂只支持Android。
+ */
+export function getHotVersion(): Promise<number>;
