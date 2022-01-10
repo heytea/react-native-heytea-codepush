@@ -1,7 +1,7 @@
 {
   "name": "@heytea/react-native-heytea-codepush",
   "title": "React Native Heytea Codepush",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "React Native Heytea Codepush",
   "main": "index.js",
   "files": [
