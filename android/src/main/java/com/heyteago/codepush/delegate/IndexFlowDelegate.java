@@ -16,6 +16,7 @@ import com.heyteago.codepush.vo.BundleConfig;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class IndexFlowDelegate extends FlowDelegate {
     private static final String BASE_STORAGE = "/data/data/";
@@ -167,7 +168,8 @@ public class IndexFlowDelegate extends FlowDelegate {
             boolean shouldUpdate = checkForAppUpdate(versionCode);
             if (shouldUpdate) {
                 DownloadUtil downloadUtil = new DownloadUtil();
-                downloadUtil.download(url, downloadUtil.getCacheDirectory(mContext), null, new DownloadUtil.OnDownloadListener() {
+                AtomicInteger retryCount = new AtomicInteger(0);
+                DownloadUtil.OnDownloadListener listener = new DownloadUtil.OnDownloadListener() {
                     @Override
                     public void onProgress(int progress) {
                         if (onDownloadListener != null) {
@@ -177,13 +179,6 @@ public class IndexFlowDelegate extends FlowDelegate {
 
                     @Override
                     public void onSuccess(File file) {
-//                        boolean md5Equal = Md5Util.checkMd5(file, md5);
-//                        if (!md5Equal) {
-//                            if (onDownloadListener != null) {
-//                                onDownloadListener.onFail(new Exception("文件md5不一致"));
-//                            }
-//                            return;
-//                        }
                         if (onDownloadListener != null) {
                             onDownloadListener.onSuccess(file);
                         }
@@ -191,11 +186,17 @@ public class IndexFlowDelegate extends FlowDelegate {
 
                     @Override
                     public void onFail(Exception e) {
-                        if (onDownloadListener != null) {
-                            onDownloadListener.onFail(e);
+                        retryCount.getAndAdd(1);
+                        if (retryCount.get() > 10) {
+                            if (onDownloadListener != null) {
+                                onDownloadListener.onFail(e);
+                            }
+                            return;
                         }
+                        downloadUtil.download(url, downloadUtil.getCacheDirectory(mContext), null, this);
                     }
-                });
+                };
+                downloadUtil.download(url, downloadUtil.getCacheDirectory(mContext), null, listener);
             } else {
                 if (onDownloadListener != null) {
                     onDownloadListener.onFail(new Exception("不需要更新"));
