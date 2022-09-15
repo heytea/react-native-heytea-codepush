@@ -167,8 +167,8 @@ public class IndexFlowDelegate extends FlowDelegate {
         try {
             boolean shouldUpdate = checkForAppUpdate(versionCode);
             if (shouldUpdate) {
-                DownloadUtil downloadUtil = new DownloadUtil();
-                AtomicInteger retryCount = new AtomicInteger(0);
+                final DownloadUtil downloadUtil = new DownloadUtil();
+                final AtomicInteger retryCount = new AtomicInteger(0);
                 DownloadUtil.OnDownloadListener listener = new DownloadUtil.OnDownloadListener() {
                     @Override
                     public void onProgress(int progress) {

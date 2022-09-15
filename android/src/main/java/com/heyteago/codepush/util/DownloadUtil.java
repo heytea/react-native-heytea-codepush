@@ -26,7 +26,7 @@ public class DownloadUtil {
 
     private final OkHttpClient mOkHttpClient;
     private final Set<Call> callSet = new HashSet<>();
-    private final ExecutorService mPoolExecutor = new ThreadPoolExecutor(3, 10, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    private final ExecutorService mPoolExecutor = new ThreadPoolExecutor(3, 10, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
     private volatile boolean flag = false;
 
@@ -55,7 +55,7 @@ public class DownloadUtil {
         }
     }
 
-    public int download(String url, String destFileDir, String destFileName, OnDownloadListener onDownloadListener) {
+    public int download(final String url, final String destFileDir, final String destFileName, final OnDownloadListener onDownloadListener) {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
