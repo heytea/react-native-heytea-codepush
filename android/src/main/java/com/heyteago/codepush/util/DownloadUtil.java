@@ -71,6 +71,10 @@ public class DownloadUtil {
                     }
                     //判断本地是否有断点下载缓存文件
                     String cacheFileName = fileName + ".cache";
+                    File destFile = new File(destFileDir);
+                    if (!destFile.exists()) {
+                        destFile.mkdirs();
+                    }
                     File cacheFile = new File(destFileDir, cacheFileName);
                     RandomAccessFile tmpAccessFile;
                     Call call;
@@ -84,6 +88,7 @@ public class DownloadUtil {
                         call = newRangCall(url, offset, total);
                         totalLength = cacheFile.length();
                     } else {
+                        cacheFile.createNewFile();
                         tmpAccessFile = new RandomAccessFile(cacheFile, "rwd");
                         call = newCall(url);
                     }
