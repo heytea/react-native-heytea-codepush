@@ -22,9 +22,10 @@
 import ReactNativeHeyteaCodePush from 'react-native-heytea-codepush';
 
 /**
- * 加载bundle成功后，调用该函数，用于判断热更新的成功、失败，以判断是否回滚操作
+ * 运行bundle过程中错误，调用该函数，用于判断热更新的成功、失败，以判断是否回滚操作
+ * 目前只支持安卓
  */
-ReactNativeHeyteaCodePush.loadSuccess(): void;
+ReactNativeHeyteaCodePush.loadFail(): void;
 
 /**
  * 检查是否需要热更新
