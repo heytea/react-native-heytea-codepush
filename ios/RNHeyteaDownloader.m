@@ -36,7 +36,7 @@
   self.versionCode = data[@"versionCode"];
   self.md5 = data[@"md5"];
   self.resBlock = block;
-  self.proBlock = progress;
+  self.proBlock = [progress copy];
   
   NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:self delegateQueue:[NSOperationQueue mainQueue]];
   NSURL *url = [NSURL URLWithString:self.url];
@@ -106,8 +106,9 @@ didCompleteWithError:(nullable NSError *)error{
              didWriteData:(int64_t)bytesWritten
         totalBytesWritten:(int64_t)totalBytesWritten
 totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite{
-  float progress = (float) totalBytesWritten / totalBytesExpectedToWrite;
-  self.proBlock(progress);
+  double progress = (double) totalBytesWritten / totalBytesExpectedToWrite;
+  NSString *pro = [NSString stringWithFormat:@"%.1f",progress*100];
+  self.proBlock(pro);
 
 }
 
