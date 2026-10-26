@@ -85,7 +85,7 @@ public class DownloadUtil {
                         long offset = cacheFile.length();
                         long total = getContentLength(url);
                         Log.d(TAG, "offset: " + offset + ", total: " + total);
-                        call = newRangCall(url, offset, total);
+                        call = newRangeCall(url, offset, total);
                         totalLength = cacheFile.length();
                     } else {
                         cacheFile.createNewFile();
@@ -166,7 +166,7 @@ public class DownloadUtil {
 
     }
 
-    private Call newRangCall(String url, long offset, long total) {
+    private Call newRangeCall(String url, long offset, long total) {
         Request request = new Request.Builder()
                 .url(url)
                 .header("Range", "bytes=" + offset + "-" + total)
